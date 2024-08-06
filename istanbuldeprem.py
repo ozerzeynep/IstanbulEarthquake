@@ -201,6 +201,15 @@ r2 = r2_score(y_test, y_pred)  #Calculates the R² (determination) score of the 
 print(f"LinearRegression MSE: {mse}")  #Prints the mean squared error (MSE) value on the screen
 print(f"LinearRegression R^2 Score: {r2}")  #Prints the R² score on the screen
 
+# Create DataFrame with predicted and actual values
+y_pred = model.predict(X_test)
+predictions_df = pd.DataFrame({'Gerçek Değerler': y_test.values.flatten(), 'Tahmin Edilen Değerler': y_pred})
+print(predictions_df)
+
+# Compare actual and predicted mortality rates
+for i in range(len(predictions_df)):
+    print(f"Gerçek Değer: {predictions_df['Gerçek Değerler'].iloc[i]}, Tahmin Edilen Değer: {predictions_df['Tahmin Edilen Değerler'].iloc[i]}")
+
 residuals = y_test - y_pred
 plt.figure(figsize=(10, 6))
 sns.histplot(residuals, kde=True)
@@ -317,5 +326,69 @@ m.add_child(html)
 # Display the map (might not render perfectly)
 m
 
+!pip install tensorflow
 
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+
+# Create the model
+model = Sequential()
+model.add(Dense(64, input_dim=X_train_scaled.shape[1], activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(1))
+
+# Compile the model
+model.compile(optimizer=Adam(learning_rate=0.001), loss='mean_squared_error', metrics=['mse'])
+
+# Model training
+history = model.fit(X_train_scaled, y_train, validation_data=(X_test_scaled, y_test), epochs=50, batch_size=32)
+
+# Evaluate model performance
+loss, mse = model.evaluate(X_test_scaled, y_test)
+print(f"Derin Öğrenme Modeli MSE: {mse}")
+
+# Make predictions
+y_pred = model.predict(X_test_scaled)
+r2 = r2_score(y_test, y_pred)
+print(f"Derin Öğrenme Modeli R^2 Score: {r2}")
+
+# Visualize the importance of features (using SHAP)
+explainer = shap.Explainer(model, X_train_scaled)
+shap_values = explainer(X_test_scaled)
+shap.summary_plot(shap_values, X_test_scaled)
+
+plt.figure(figsize=(12, 6))
+plt.plot(history.history['loss'], label='Eğitim Kaybı')
+plt.plot(history.history['val_loss'], label='Doğrulama Kaybı')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Loss of Training and Validation')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Add predicted values ​​to DataFrame
+predictions_df = pd.DataFrame({'Gerçek Değerler': y_test.values.flatten(), 'Tahmin Edilen Değerler': y_pred.flatten()})
+
+# Compare actual and predicted values
+print(predictions_df.head())
+
+
+plt.figure(figsize=(10, 6))
+plt.scatter(predictions_df['Gerçek Değerler'], predictions_df['Tahmin Edilen Değerler'], alpha=0.5)
+plt.xlabel('Gerçek Değerler')
+plt.ylabel('Tahmin Edilen Değerler')
+plt.title('Gerçek vs Tahmin Edilen Değerler')
+plt.grid(True)
+plt.show()
+
+import shap
+
+explainer = shap.Explainer(model, X_train_scaled)
+shap_values = explainer(X_test_scaled)
+
+shap.summary_plot(shap_values, X_test_scaled, feature_names=X.columns)
 
