@@ -799,52 +799,165 @@ print(importance_df)
 
 !pip install catboost
 
-from sklearn.svm import SVR
-from catboost import CatBoostRegressor
-
-X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+# CatBoostRegressor Modeli
+start_time_catboost = time.time()  # Başlangıç zamanını al
+categorical_features = ['ilce_adi', 'mahalle_adi']
 
 catboost_model = CatBoostRegressor(iterations=300, depth=6, learning_rate=0.1, loss_function='RMSE', cat_features=categorical_features, verbose=0)
 catboost_model.fit(X_train, y_train)
+end_time_catboost = time.time()  # Bitiş zamanını al
 
-y_pred_catboost = catboost_model.predict(X_test)
+y_pred_catboost = catboost_model.predict(x_test)
 
 mse_catboost = mean_squared_error(y_test, y_pred_catboost)
 r2_catboost = r2_score(y_test, y_pred_catboost)
+catboost_time = end_time_catboost - start_time_catboost  # Süreyi hesapla
 
 print(f"CatBoostRegressor MSE: {mse_catboost}")
 print(f"CatBoostRegressor R^2 Score: {r2_catboost}")
+print(f"CatBoostRegressor Süre: {catboost_time} saniye")
+
+from sklearn.svm import SVR
+import time
+
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
 svm_model = SVR(kernel='rbf', C=100, gamma='scale')  # Kernel ve hiperparametreleri ihtiyacınıza göre ayarlayın
 svm_model.fit(X_train, y_train)
+
+start_time_svm = time.time()  # Eğitim süresi başlangıcı
+svm_model = SVR(kernel='rbf', C=100, gamma='scale')  # Kernel ve hiperparametreleri ihtiyacınıza göre ayarlayın
+svm_model.fit(X_train, y_train)
+end_time_svm = time.time()  # Eğitim süresi bitişi
 
 y_pred_svm = svm_model.predict(X_test)
 
 mse_svm = mean_squared_error(y_test, y_pred_svm)
 r2_svm = r2_score(y_test, y_pred_svm)
 
-print(f"SVR MSE: {mse_svm}")
-print(f"SVR R^2 Score: {r2_svm}")
-
-feature_importances = catboost_model.get_feature_importance()
-importance_df = pd.DataFrame({'Özellik': X.columns, 'Önemi': feature_importances})
-importance_df = importance_df.sort_values(by='Önemi', ascending=False)
-print(importance_df)
-
-from sklearn.decomposition import PCA
-
-pca = PCA(n_components=0.95)
-X_pca = pca.fit_transform(X_scaled)
-
-
-print(f"CatBoostRegressor MSE: {mse_catboost}")
-print(f"CatBoostRegressor R^2 Score: {r2_catboost}")
+svm_time = end_time_svm - start_time_svm
 
 print(f"SVR MSE: {mse_svm}")
 print(f"SVR R^2 Score: {r2_svm}")
+print(f"SVR Eğitim Süresi: {svm_time:.2f} saniye")
 
-feature_importances = catboost_model.get_feature_importance()
-importance_df = pd.DataFrame({'Özellik': [f'PC{i+1}' for i in range(X_pca.shape[1])], 'Önemi': feature_importances})
-importance_df = importance_df.sort_values(by='Önemi', ascending=False)
-print(importance_df)
+!pip install mrmr_selection
 
+from mrmr import mrmr_classif
+
+K = 10
+selected_features = mrmr_classif(X, y, K)
+
+print("Seçilen Özellikler:", selected_features)
+
+selected_df = df[selected_features + ['can_kaybi_sayisi']]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    selected_df.drop('can_kaybi_sayisi', axis=1),
+    selected_df['can_kaybi_sayisi'],
+    test_size=0.2,
+    random_state=42
+)
+
+
+start_time = time.time()  # Başlangıç zamanını al
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
+end_time = time.time()  # Bitiş zamanını al
+
+
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
+
+mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+training_time = end_time - start_time
+
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"Mean Absolute Error (MAE): {mae}")
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+print(f"R-squared (R²): {r2}")
+print(f"Model Eğitim Süresi: {training_time} saniye")
+
+!pip install xgboost
+
+!pip install shap
+
+import xgboost as xgb
+import shap
+import time
+
+start_time = time.time()
+
+bagımlı = 'can_kaybi_sayisi'
+bagımsız = df.columns.difference([target, 'ilce_adi', 'mahalle_adi', 'mahalle_koy_uavt'])
+
+X = df[bagımsız]
+y = df[bagımlı]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+preprocessing_time = time.time() - start_time
+print(f"Data preprocessing time: {preprocessing_time:.2f} seconds")
+start_time = time.time()
+
+xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, random_state=42)
+xgb_model.fit(X_train_scaled, y_train)
+
+training_time = time.time() - start_time
+print(f"XGBoost training time: {training_time:.2f} seconds")
+
+start_time = time.time()
+
+y_pred_xgb = xgb_model.predict(X_test_scaled)
+
+prediction_time = time.time() - start_time
+print(f"XGBoost prediction time: {prediction_time:.2f} seconds")
+
+mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+r2_xgb = r2_score(y_test, y_pred_xgb)
+
+print(f"XGBoost MSE: {mse_xgb}")
+print(f"XGBoost R^2 Score: {r2_xgb}")
+
+start_time = time.time()
+
+explainer_xgb = shap.Explainer(xgb_model, X_train_scaled)
+shap_values_xgb = explainer_xgb(X_test_scaled)
+
+shap_time = time.time() - start_time
+print(f"SHAP analysis time: {shap_time:.2f} seconds")
+
+shap.summary_plot(shap_values_xgb, X_test_scaled)
+
+from sklearn.model_selection import GridSearchCV
+
+start_time = time.time()
+
+param_grid = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [3, 6, 10],
+    'learning_rate': [0.01, 0.1, 0.2]
+}
+
+grid_search = GridSearchCV(estimator=xgb.XGBRegressor(objective='reg:squarederror', random_state=42),
+                           param_grid=param_grid, scoring='neg_mean_squared_error', cv=3, verbose=1)
+grid_search.fit(X_train_scaled, y_train)
+
+tuning_time = time.time() - start_time
+print(f"GridSearchCV hyperparameter tuning time: {tuning_time:.2f} seconds")
+
+best_xgb_model = grid_search.best_estimator_
+best_y_pred_xgb = best_xgb_model.predict(X_test_scaled)
+
+best_mse_xgb = mean_squared_error(y_test, best_y_pred_xgb)
+best_r2_xgb = r2_score(y_test, best_y_pred_xgb)
+
+print(f"Best XGBoost MSE with GridSearchCV: {best_mse_xgb}")
+print(f"Best XGBoost R^2 Score with GridSearchCV: {best_r2_xgb}")
