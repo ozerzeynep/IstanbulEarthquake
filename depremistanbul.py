@@ -139,19 +139,27 @@ scaler = StandardScaler()      #Standardizes and scales training data / Transfor
 x_train_scaled = scaler.fit_transform(x_train)
 x_test_scaled = scaler.transform(x_test)
 
+start_time_model_training = time.time()
+
 rf = RandomForestRegressor(n_estimators=300, random_state=11)  #Creates a 300-tree RandomForestRegressor model and uses a fixed randomness value to control randomness
 
 model2 = rf.fit(x_train_scaled, y_train)    #Trains the RandomForestRegressor model with scaled training data
+
+end_time_model_training = time.time()  # Model eğitimi bitiş zamanı
+model_training_time = end_time_model_training - start_time_model_training
 
 model2.score(x_test_scaled, y_test)   #Calculates the R² (determination) score of the model on test data and evaluates how well the model performs
 
 y_pred = rf.predict(x_test_scaled)  #Enables the model to make predictions by making predictions on test data
 
 mse = mean_squared_error(y_test, y_pred)  #Calculate the mean squared error (MSE) between actual and predicted values
+mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)  #Calculates the R² (determination) score of the model
 
 print(f"RandomForestRegressor MSE: {mse}")  #Prints the mean squared error (MSE) value on the screen
+print(f"RandomForestRegressor MAE: {mae}")
 print(f"RandomForestRegressor R^2 Score: {r2}")  #Prints the R² score on the screen
+print(f"Model Eğitimi Süresi: {model_training_time:.2f} saniye")
 
 feature_importances = rf.feature_importances_
 features = x.columns
@@ -185,21 +193,21 @@ shap_values = explainer(X_test)
 # Plot the feature importance
 shap.summary_plot(shap_values, X_test)
 
+start_time_model_training = time.time()
 lr = LinearRegression()  #Builds a simple linear regression model
-
 model = lr.fit(x_train_scaled, y_train)  #Trains the LinearRegression model with scaled training data
-
 model.score(x_test_scaled,y_test)   #Calculate the R² (determination) score of the model on test data and evaluate the performance of the model
-
 model.score(x_train_scaled, y_train)  #Calculates the R² (stability) score of the model on training data, evaluates the performance of the model on training data and examines the case of overlearning
-
 y_pred = lr.predict(x_test_scaled)  #Produces model predictions by making predictions on test data
 
 mse = mean_squared_error(y_test, y_pred)  #Calculate the mean squared error (MSE) between actual and predicted values
+mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)  #Calculates the R² (determination) score of the model
 
 print(f"LinearRegression MSE: {mse}")  #Prints the mean squared error (MSE) value on the screen
+print(f"LinearRegression MAE: {mae}")
 print(f"LinearRegression R^2 Score: {r2}")  #Prints the R² score on the screen
+print(f"Model Eğitimi Süresi: {model_training_time:.2f} saniye")
 
 predictions_df = pd.DataFrame({'Gerçek Değerler': y_test.values, 'Tahmin Edilen Değerler': y_pred})
 print(predictions_df)
@@ -786,9 +794,11 @@ model = rf.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 
 mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
 print(f"RandomForestRegressor MSE: {mse}")
+print(f"RandomForestRegressor MAE: {mae}")
 print(f"RandomForestRegressor R^2 Score: {r2}")
 
 # Özelliklerin önem derecelerini görüntülemek
@@ -797,23 +807,103 @@ importance_df = pd.DataFrame({'Özellik': selected_features, 'Önemi': feature_i
 importance_df = importance_df.sort_values(by='Önemi', ascending=False)
 print(importance_df)
 
+from sklearn.feature_selection import mutual_info_regression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import time
+
+# Verileri ve hedef değişkeni tanımlayın
+X = df[bagımsız]  # Özellikler
+y = df[bagımlı]   # Hedef
+
+# Feature selection ve veri hazırlama sürelerini hesaplama
+start_time_feature_selection = time.time()  # Özellik seçimi başlangıç zamanı
+
+# Mutual bilgi hesaplama
+mi = mutual_info_regression(X, y)
+
+# Özellikleri ve mutual bilgi değerleri DataFrame ile birleştirme
+mi_df = pd.DataFrame({'Özellik': X.columns, 'Mutual Bilgi': mi})
+mi_df = mi_df.sort_values(by='Mutual Bilgi', ascending=False)
+
+# En yüksek mutual bilgiye sahip özellikleri seçme
+selected_features = mi_df.head(10)['Özellik'].tolist()
+print("Seçilen Özellikler:", selected_features)
+
+# Seçilen özelliklerle veri setini hazırlama
+X_selected = X[selected_features]
+X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.2, random_state=42)
+
+end_time_feature_selection = time.time()  # Özellik seçimi bitiş zamanı
+feature_selection_time = end_time_feature_selection - start_time_feature_selection  # Süreyi hesapla
+
+print(f"Özellik Seçimi Süresi: {feature_selection_time:.2f} saniye")
+
+# Model eğitimi ve değerlendirme sürelerini hesaplama
+start_time_model_training = time.time()  # Model eğitimi başlangıç zamanı
+
+# RandomForestRegressor modelini oluşturma ve eğitme
+rf = RandomForestRegressor(n_estimators=300, random_state=42)
+model = rf.fit(X_train, y_train)
+
+# Test seti ile tahmin yapma
+y_pred = model.predict(X_test)
+
+end_time_model_training = time.time()  # Model eğitimi bitiş zamanı
+model_training_time = end_time_model_training - start_time_model_training  # Süreyi hesapla
+
+# Performans metriklerini hesaplama
+mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f"RandomForestRegressor MSE: {mse}")
+print(f"RandomForestRegressor MAE: {mae}")
+print(f"RandomForestRegressor R^2 Score: {r2}")
+print(f"Model Eğitimi Süresi: {model_training_time:.2f} saniye")
+
+# Özelliklerin önem derecelerini görüntüleme
+feature_importances = rf.feature_importances_
+importance_df = pd.DataFrame({'Özellik': selected_features, 'Önemi': feature_importances})
+importance_df = importance_df.sort_values(by='Önemi', ascending=False)
+print(importance_df)
+
 !pip install catboost
 
-# CatBoostRegressor Modeli
-start_time_catboost = time.time()  # Başlangıç zamanını al
-categorical_features = ['ilce_adi', 'mahalle_adi']
+from catboost import CatBoostRegressor
+import time
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-catboost_model = CatBoostRegressor(iterations=300, depth=6, learning_rate=0.1, loss_function='RMSE', cat_features=categorical_features, verbose=0)
+start_time_catboost = time.time()  # Başlangıç zamanını al
+
+# Kategorik özelliklerin indekslerini elde etme
+categorical_features_indices = [x_train.columns.get_loc(col) for col in ['ilce_adi', 'mahalle_adi'] if col in X_train.columns]
+
+# CatBoost modelini oluşturma
+catboost_model = CatBoostRegressor(
+    iterations=300,
+    depth=6,
+    learning_rate=0.1,
+    loss_function='RMSE',
+    cat_features=categorical_features_indices,
+    verbose=0
+)
+
+# Modeli eğitme
 catboost_model.fit(X_train, y_train)
+
 end_time_catboost = time.time()  # Bitiş zamanını al
 
-y_pred_catboost = catboost_model.predict(x_test)
+# Tahminleri yapma
+y_pred_catboost = catboost_model.predict(X_test)
 
+# Performans metriklerini hesaplama
 mse_catboost = mean_squared_error(y_test, y_pred_catboost)
+mae_catboost = mean_absolute_error(y_test, y_pred_catboost)
 r2_catboost = r2_score(y_test, y_pred_catboost)
 catboost_time = end_time_catboost - start_time_catboost  # Süreyi hesapla
 
 print(f"CatBoostRegressor MSE: {mse_catboost}")
+print(f"CatBoostRegressor MAE: {mae_catboost}")
 print(f"CatBoostRegressor R^2 Score: {r2_catboost}")
 print(f"CatBoostRegressor Süre: {catboost_time} saniye")
 
@@ -833,11 +923,13 @@ end_time_svm = time.time()  # Eğitim süresi bitişi
 y_pred_svm = svm_model.predict(X_test)
 
 mse_svm = mean_squared_error(y_test, y_pred_svm)
+mae_svm = mean_absolute_error(y_test, y_pred_svm)
 r2_svm = r2_score(y_test, y_pred_svm)
 
 svm_time = end_time_svm - start_time_svm
 
 print(f"SVR MSE: {mse_svm}")
+print(f"SVR MAE: {mae_svm}")
 print(f"SVR R^2 Score: {r2_svm}")
 print(f"SVR Eğitim Süresi: {svm_time:.2f} saniye")
 
@@ -892,7 +984,7 @@ import time
 start_time = time.time()
 
 bagımlı = 'can_kaybi_sayisi'
-bagımsız = df.columns.difference([target, 'ilce_adi', 'mahalle_adi', 'mahalle_koy_uavt'])
+bagımsız = df.columns.difference([bagımlı, 'ilce_adi', 'mahalle_adi', 'mahalle_koy_uavt'])
 
 X = df[bagımsız]
 y = df[bagımlı]
@@ -921,9 +1013,11 @@ prediction_time = time.time() - start_time
 print(f"XGBoost prediction time: {prediction_time:.2f} seconds")
 
 mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+mae_xgb = mean_absolute_error(y_test, y_pred_xgb)
 r2_xgb = r2_score(y_test, y_pred_xgb)
 
 print(f"XGBoost MSE: {mse_xgb}")
+print(f"XGBoost MAE: {mae_xgb}")
 print(f"XGBoost R^2 Score: {r2_xgb}")
 
 start_time = time.time()
@@ -957,7 +1051,9 @@ best_xgb_model = grid_search.best_estimator_
 best_y_pred_xgb = best_xgb_model.predict(X_test_scaled)
 
 best_mse_xgb = mean_squared_error(y_test, best_y_pred_xgb)
+best_mae_xgb = mean_absolute_error(y_test, best_y_pred_xgb)
 best_r2_xgb = r2_score(y_test, best_y_pred_xgb)
 
 print(f"Best XGBoost MSE with GridSearchCV: {best_mse_xgb}")
+print(f"Best XGBoost MAE with GridSearchCV: {best_mae_xgb}")
 print(f"Best XGBoost R^2 Score with GridSearchCV: {best_r2_xgb}")
