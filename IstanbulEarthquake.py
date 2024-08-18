@@ -140,7 +140,7 @@ plt.ylabel("Mortality Rates", fontsize=14)
 plt.show()
 
 plt.figure(figsize=(17,6))
-sns.lineplot(x= "ilce_adi", y= "can_kaybi_sayisi", data = df);
+sns.lineplot(x= "province_name", y= "life_loss_number", data = df);
 plt.title("Line Plot of Mortality Rates by District", fontsize= 17, fontweight= 'bold')
 plt.xticks(rotation = 90, fontsize=9)   #Creates and displays a line graph showing mortality rates by districts
 plt.xlabel("Districts", fontsize= 13)
