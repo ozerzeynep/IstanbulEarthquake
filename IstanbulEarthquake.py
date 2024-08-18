@@ -666,7 +666,7 @@ from sklearn.model_selection import train_test_split
 
 # Veri setinin hazırlanması
 y = df[["life_loss_number"]]      #Target variable for the model's properties and removes some unnecessary columns
-x= df.drop(["life_loss_number", "neighborhood_village_uavt", "province_name", "neighborhood_name"], axis=1)
+x= df.drop(["life_loss_number", "neighborhood_village_uavt", "province_name\t", "neighborhood_name"], axis=1)
 x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=11, train_size=0.70)  # Splits features and target variables into 70% training and 30% testing
 
 # Özelliklerin ölçeklenmesi
