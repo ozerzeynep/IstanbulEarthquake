@@ -33,10 +33,10 @@ from mrmr import mrmr_regression
 from scipy.stats import randint
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import ExtraTreesRegressor
-import lightgbm as lgb
 from boruta import BorutaPy
 import geopandas as gpd
 import folium
+import matplotlib.ticker as mtick
 from folium import Choropleth
 from folium import Html
 from shapely.geometry import Point
@@ -46,8 +46,6 @@ from catboost import CatBoostRegressor
 from mpl_toolkits.mplot3d import Axes3D
 
 !pip install catboost
-
-pip install lightgbm
 
 df = pd.read_csv("deprem_senaryosu.csv", encoding="ISO-8859-9", delimiter=";")
 
@@ -292,137 +290,195 @@ print(f"Testing R^2 Score: {test_r2_svr}")
 print("---------------------------------------------------")
 print(f"Best parameters: {grid_search.best_params_}")
 
-models = ['Linear', 'Random Forest', 'SVR', 'EGBoosting', 'DecisionTree', 'ExtraTrees', 'CatBoost', 'LGBoosting']
+models = ['LR', 'RF', 'SVR', 'XGBoost', 'DT', 'ET', 'CatBoost', 'CELM']
+training_times = [training_time1, training_time2, training_time3, training_time4, training_time5, training_time6, training_time7, 0.0516]
+r2_scores = [train_r2_lr, train_r2_ro, train_r2_svr, train_r2_xg, train_r2_dc, train_r2_ex, train_r2_cat, 0.9997]
 
-training_times = [training_time1, training_time2, training_time3, training_time4, training_time5, training_time6, training_time7, training_time8]
-
-r2_scores = [train_r2_lr, train_r2_ro, train_r2_svr, train_r2_xg, train_r2_dc, train_r2_ex, train_r2_cat, train_r2_lg]
+sorted_indices = np.argsort(r2_scores)[::-1]
+models = [models[i] for i in sorted_indices]
+training_times = [training_times[i] for i in sorted_indices]
+r2_scores = [r2_scores[i] for i in sorted_indices]
 
 fig, ax1 = plt.subplots(figsize=(17, 6))
 
 ax1.bar(models, training_times, color='skyblue')
-ax1.set_xlabel('Modeller')
-ax1.set_ylabel('Eğitim Süresi (Saniye)', color='green')
-ax1.tick_params(axis='y', labelcolor='green')
+ax1.set_xlabel('Modeller', color = 'blue')
+ax1.set_ylabel('Eğitim Süresi (Saniye)', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
 
 ax2 = ax1.twinx()
-ax2.plot(models, r2_scores, color='red', marker='o')
+
+ax2.plot(models, r2_scores, color='red', marker='o', label='Diğer Modeller', markerfacecolor='red')
+
+linear_index = models.index('XGBoost')
+ax2.plot(models[linear_index], r2_scores[linear_index], color='red', marker='*', markersize=12, label='Linear Model')
+
 ax2.set_ylabel('R²', color='red')
 ax2.tick_params(axis='y', labelcolor='red')
 
-plt.title('Model Performans Karşılaştırması')
+ax2.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x:.3f}'))
 
 plt.show()
 
-models = ['Linear', 'Random Forest', 'SVR', 'EGBoosting', 'DecisionTree', 'ExtraTrees', 'CatBoost', 'LGBoosting']
+models = ['LR', 'RF', 'SVR', 'XGBoost', 'DT', 'ET', 'CatBoost', 'CELM']
+training_times = [training_time1, training_time2, training_time3, training_time4, training_time5, training_time6, training_time7, 0.0516]
+mae_scores = [train_mae_lr, train_mae_ro, train_mae_svr, train_mae_xg, train_mae_dc, train_mae_ex, train_mae_cat, 0.3168]
 
-training_times = [training_time1, training_time2, training_time3, training_time4, training_time5, training_time6, training_time7, training_time8]
 
-mae_scores = [train_mae_lr, train_mae_ro, train_mae_svr, train_mae_xg, train_mae_dc, train_mae_ex, train_mae_cat, train_mae_lg]
+sorted_indices = np.argsort(mae_scores)[::-1]
+models = [models[i] for i in sorted_indices]
+training_times = [training_times[i] for i in sorted_indices]
+mae_scores = [mae_scores[i] for i in sorted_indices]
+
 
 fig, ax1 = plt.subplots(figsize=(17, 6))
 
 ax1.bar(models, training_times, color='skyblue')
-ax1.set_xlabel('Modeller')
-ax1.set_ylabel('Eğitim Süresi (Saniye)', color='green')
-ax1.tick_params(axis='y', labelcolor='green')
+ax1.set_xlabel('Modeller', color= 'blue')
+ax1.set_ylabel('Eğitim Süresi (Saniye)', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
 
 ax2 = ax1.twinx()
-ax2.plot(models, r2_scores, color='red', marker='o')
+
+ax2.plot(models, mae_scores, color='red', marker='o', label='Diğer Modeller', markerfacecolor='red')
+
+xgboost_index = models.index('XGBoost')
+ax2.plot(models[xgboost_index], mae_scores[xgboost_index], color='red', marker='*', markersize=12, label='XGBoost Model')
+
 ax2.set_ylabel('MAE', color='red')
 ax2.tick_params(axis='y', labelcolor='red')
 
-plt.title('Model MAE Değer Karşılaştırması')
-
+ax2.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x:.3f}'))
 
 plt.show()
 
-models = ['Linear', 'Random Forest', 'SVR', 'EGBoosting', 'DecisionTree', 'ExtraTrees', 'CatBoost', 'LGBoosting']
+models = ['LR', 'RF', 'SVR', 'XGBoost', 'DT', 'ET', 'CatBoost', 'CELM']
+training_times = [training_time1, training_time2, training_time3, training_time4, training_time5, training_time6, training_time7, 0.0516]
+mse_scores = [train_mse_lr, train_mse_ro, train_mse_svr, train_mse_xg, train_mse_dc, train_mse_ex, train_mse_cat, 0.2108]
 
-training_times = [training_time1, training_time2, training_time3, training_time4, training_time5, training_time6, training_time7, training_time8]
 
-mae_scores = [train_mse_lr, train_mse_ro, train_mse_svr, train_mse_xg, train_mse_dc, train_mse_ex, train_mse_cat, train_mse_lg]
+sorted_indices = np.argsort(mse_scores)[::-1]
+models = [models[i] for i in sorted_indices]
+training_times = [training_times[i] for i in sorted_indices]
+mse_scores = [mse_scores[i] for i in sorted_indices]
+
 
 fig, ax1 = plt.subplots(figsize=(17, 6))
 
 ax1.bar(models, training_times, color='skyblue')
-ax1.set_xlabel('Modeller')
-ax1.set_ylabel('Eğitim Süresi (Saniye)', color='green')
-ax1.tick_params(axis='y', labelcolor='green')
+ax1.set_xlabel('Modeller', color= 'blue')
+ax1.set_ylabel('Eğitim Süresi (Saniye)', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
 
 ax2 = ax1.twinx()
-ax2.plot(models, r2_scores, color='red', marker='o')
+
+ax2.plot(models, mse_scores, color='red', marker='o', label='Diğer Modeller', markerfacecolor='red')
+
+linear_index = models.index('XGBoost')
+ax2.plot(models[linear_index], mse_scores[linear_index], color='red', marker='*', markersize=12, label='XGBoost Model')
+
 ax2.set_ylabel('MSE', color='red')
 ax2.tick_params(axis='y', labelcolor='red')
 
-plt.title('Model MSE Değer Karşılaştırması')
-
+ax2.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x:.3f}'))
 
 plt.show()
 
-models = ['Linear', 'Random Forest', 'SVR', 'EGBoosting', 'DecisionTree', 'ExtraTrees', 'CatBoost', 'LGBoosting']
+models = ['LR', 'RF', 'SVR', 'XGBoost', 'DT', 'ET', 'CatBoost', 'CELM']
+testing_times = [testing_time1, testing_time2, testing_time3, testing_time4, testing_time5, testing_time6, testing_time7, 0.0044]
+r2_scores = [test_r2_lr, test_r2_ro, test_r2_svr, test_r2_xg, test_r2_dc, test_r2_ex, test_r2_cat, 0.9988]
 
-testing_times = [testing_time1, testing_time2, testing_time3, testing_time4, testing_time5, testing_time6, testing_time7, testing_time8]
-
-r2_scores = [test_r2_lr, test_r2_ro, test_r2_svr, test_r2_xg, test_r2_dc, test_r2_ex, test_r2_cat, test_r2_lg]
+sorted_indices = np.argsort(r2_scores)[::-1]
+models = [models[i] for i in sorted_indices]
+testing_times = [testing_times[i] for i in sorted_indices]
+r2_scores = [r2_scores[i] for i in sorted_indices]
 
 fig, ax1 = plt.subplots(figsize=(17, 6))
 
 ax1.bar(models, testing_times, color='lightgreen')
-ax1.set_xlabel('Modeller')
+ax1.set_xlabel('Modeller', color= 'green')
 ax1.set_ylabel('Test Süresi (Saniye)', color='green')
 ax1.tick_params(axis='y', labelcolor='green')
 
 ax2 = ax1.twinx()
-ax2.plot(models, r2_scores, color='red', marker='o')
+
+ax2.plot(models, r2_scores, color='red', marker='o', label='Diğer Modeller', markerfacecolor='red')
+
+linear_index = models.index('LR')
+ax2.plot(models[linear_index], r2_scores[linear_index], color='red', marker='*', markersize=12, label='Linear Model')
+
 ax2.set_ylabel('R²', color='red')
 ax2.tick_params(axis='y', labelcolor='red')
 
-plt.title('Model Performans Karşılaştırması')
+ax2.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x:.3f}'))
 
 plt.show()
 
-models = ['Linear', 'Random Forest', 'SVR', 'EGBoosting', 'DecisionTree', 'ExtraTrees', 'CatBoost', 'LGBoosting']
+models = ['LR', 'RF', 'SVR', 'XGBoost', 'DT', 'ET', 'CatBoost', 'CELM']
+testing_times = [testing_time1, testing_time2, testing_time3, testing_time4, testing_time5, testing_time6, testing_time7, 0.0044]
 
-testing_times = [testing_time1, testing_time2, testing_time3, testing_time4, testing_time5, testing_time6, testing_time7, testing_time8]
+mse_scores = [test_mse_lr, test_mse_ro, test_mse_svr, test_mse_xg, test_mse_dc, test_mse_ex, test_mse_cat, 0.6121]
 
-r2_scores = [test_mae_lr, test_mae_ro, test_mae_svr, test_mae_xg, test_mae_dc, test_mae_ex, test_mae_cat, test_mae_lg]
+
+sorted_indices = np.argsort(mse_scores)[::-1]
+models = [models[i] for i in sorted_indices]
+testing_times = [testing_times[i] for i in sorted_indices]
+mse_scores = [mse_scores[i] for i in sorted_indices]
+
 
 fig, ax1 = plt.subplots(figsize=(17, 6))
 
 ax1.bar(models, testing_times, color='lightgreen')
-ax1.set_xlabel('Modeller')
+ax1.set_xlabel('Modeller', color = 'green')
 ax1.set_ylabel('Test Süresi (Saniye)', color='green')
 ax1.tick_params(axis='y', labelcolor='green')
 
 ax2 = ax1.twinx()
-ax2.plot(models, r2_scores, color='red', marker='o')
-ax2.set_ylabel('MAE', color='red')
-ax2.tick_params(axis='y', labelcolor='red')
 
-plt.title('Model MAE Değer Karşılaştırması')
+ax2.plot(models, mse_scores, color='red', marker='o', label='Diğer Modeller', markerfacecolor='red')
 
-plt.show()
+linear_index = models.index('LR')
+ax2.plot(models[linear_index], mse_scores[linear_index], color='red', marker='*', markersize=12, label='Linear Model')
 
-models = ['Linear', 'Random Forest', 'SVR', 'EGBoosting', 'DecisionTree', 'ExtraTrees', 'CatBoost', 'LGBoosting']
-
-testing_times = [testing_time1, testing_time2, testing_time3, testing_time4, testing_time5, testing_time6, testing_time7, testing_time8]
-
-r2_scores = [test_mse_lr, test_mse_ro, test_mse_svr, test_mse_xg, test_mse_dc, test_mse_ex, test_mse_cat, test_mse_lg]
-
-fig, ax1 = plt.subplots(figsize=(17, 6))
-
-ax1.bar(models, testing_times, color='lightgreen')
-ax1.set_xlabel('Modeller')
-ax1.set_ylabel('Test Süresi (Saniye)', color='green')
-ax1.tick_params(axis='y', labelcolor='green')
-
-ax2 = ax1.twinx()
-ax2.plot(models, r2_scores, color='red', marker='o')
 ax2.set_ylabel('MSE', color='red')
 ax2.tick_params(axis='y', labelcolor='red')
 
-plt.title('Model MSE Değer Karşılaştırması')
+ax2.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x:.3f}'))
+
+plt.show()
+
+models = ['LR', 'RF', 'SVR', 'XGBoost', 'DT', 'ET', 'CatBoost', 'CELM']
+
+testing_times = [testing_time1, testing_time2, testing_time3, testing_time4, testing_time5, testing_time6, testing_time7, 0.0044]
+
+mae_scores = [test_mae_lr, test_mae_ro, test_mae_svr, test_mae_xg, test_mae_dc, test_mae_ex, test_mae_cat, 0.5118]
+
+
+sorted_indices = np.argsort(mae_scores)[::-1]
+models = [models[i] for i in sorted_indices]
+testing_times = [testing_times[i] for i in sorted_indices]
+mae_scores = [mae_scores[i] for i in sorted_indices]
+
+
+
+fig, ax1 = plt.subplots(figsize=(17, 6))
+
+ax1.bar(models, testing_times, color='lightgreen')
+ax1.set_xlabel('Modeller', color = 'green')
+ax1.set_ylabel('Test Süresi (Saniye)', color='green')
+ax1.tick_params(axis='y', labelcolor='green')
+
+ax2 = ax1.twinx()
+
+ax2.plot(models, mae_scores, color='red', marker='o', label='Diğer Modeller', markerfacecolor='red')
+
+ax2.plot(models[7], mae_scores[7], color='red', marker='*', markersize=12, label='Linear Model')
+
+ax2.set_ylabel('MAE', color='red')
+ax2.tick_params(axis='y', labelcolor='red')
+
+ax2.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x:.3f}'))
+
 
 plt.show()
 
@@ -469,47 +525,6 @@ print(f"Testing Time: {testing_time7} seconds")
 print(f"Testing MSE: {test_mse_cat}")
 print(f"Testing MAE: {test_mae_cat}")
 print(f"Testing R^2 Score: {test_r2_cat}")
-
-param_grid = {
-    'num_leaves': [31, 50, 100],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'n_estimators': [100, 200, 500]
-}
-
-grid_search = GridSearchCV(lgb.LGBMRegressor(), param_grid, cv=5)
-
-start_train_time = time.time()
-grid_search.fit(x_train_scaled, y_train)
-end_train_time = time.time()
-training_time8 = end_train_time - start_train_time
-
-best_lgbm = grid_search.best_estimator_
-
-y_train_pred = best_lgbm.predict(x_train_scaled)
-train_mse_lg = mean_squared_error(y_train, y_train_pred)
-train_mae_lg = mean_absolute_error(y_train, y_train_pred)
-train_r2_lg = r2_score(y_train, y_train_pred)
-
-start_test_time = time.time()
-y_test_pred = best_lgbm.predict(x_test_scaled)
-end_test_time = time.time()
-testing_time8 = end_test_time - start_test_time
-
-test_mse_lg = mean_squared_error(y_test, y_test_pred)
-test_mae_lg = mean_absolute_error(y_test, y_test_pred)
-test_r2_lg = r2_score(y_test, y_test_pred)
-
-print(f"Training Time: {training_time8} seconds")
-print(f"Training MSE: {train_mse_lg}")
-print(f"Training MAE: {train_mae_lg}")
-print(f"Training R^2 Score: {train_r2_lg}")
-print("--------------------------------------------------")
-print(f"Testing Time: {testing_time8} seconds")
-print(f"Testing MSE: {test_mse_lg}")
-print(f"Testing MAE: {test_mae_lg}")
-print(f"Testing R^2 Score: {test_r2_lg}")
-print("---------------------------------------------------")
-print(f"Best parameters: {grid_search.best_params_}")
 
 param_grid = {
     'n_estimators': [100, 200, 300],
